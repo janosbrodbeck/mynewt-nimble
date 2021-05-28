@@ -38,7 +38,7 @@
 #include "core_cm4.h"
 #endif
 
-#ifdef MODULE_LLSTATS
+#ifdef MODULE_LLSTATS_JELLING
 #include "llstats.h"
 #endif
 
@@ -894,7 +894,7 @@ ble_phy_tx_end_isr(void)
     /* Store PHY on which we've just transmitted smth */
     tx_phy_mode = g_ble_phy_data.phy_cur_phy_mode;
 
-#ifdef MODULE_LLSTATS
+#ifdef MODULE_LLSTATS_JELLING
     llstats_inc_chan_tx(g_ble_phy_data.phy_chan);
 #endif
 

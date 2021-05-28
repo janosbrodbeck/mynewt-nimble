@@ -42,6 +42,10 @@
 #include "controller/ble_ll_sync.h"
 #include "ble_ll_conn_priv.h"
 
+#ifdef MODULE_LLSTATS_JELLING
+#include "llstats.h"
+#endif
+
 /*
  * XXX:
  * 1) I think I can guarantee that we dont process things out of order if
@@ -1670,6 +1674,9 @@ ble_ll_scan_update_aux_data(struct ble_mbuf_hdr *ble_hdr, uint8_t *rxbuf,
         if (is_aux) {
             if (get_le16(eh) != aux_data->adi) {
                 aux_data->flags_isr |= BLE_LL_AUX_FLAG_SCAN_ERROR;
+#ifdef MODULE_LLSTATS_JELLING
+                llstats_inc_aux_chain_err();
+#endif
                 STATS_INC(ble_ll_stats, aux_chain_err);
             }
         } else {
@@ -3138,6 +3145,10 @@ ble_ll_scan_rx_pkt_in_on_aux(uint8_t pdu_type, struct os_mbuf *om,
             rxinfo->flags &= ~BLE_MBUF_HDR_F_AUX_PTR_WAIT;
             aux_data->flags_ll |= BLE_LL_AUX_FLAG_SCAN_ERROR;
 
+#ifdef MODULE_LLSTATS_JELLING
+            /* cannot schedule aux packet */
+            llstats_inc_aux_not_schedulable();
+#endif
             /* Silently ignore if no HCI event was sent to host */
             if (!(aux_data->flags_ll & BLE_LL_AUX_FLAG_HCI_SENT_ANY)) {
                 goto scan_continue;

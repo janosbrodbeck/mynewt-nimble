@@ -49,6 +49,10 @@
 #include "ble_ll_dtm_priv.h"
 #endif
 
+#ifdef MODULE_LLSTATS_JELLING
+#include "llstats.h"
+#endif
+
 /* XXX:
  *
  * 1) use the sanity task!
@@ -781,6 +785,9 @@ ble_ll_count_rx_stats(struct ble_mbuf_hdr *hdr, uint16_t len, uint8_t pdu_type)
             STATS_INC(ble_ll_stats, rx_data_pdu_crc_err);
             STATS_INCN(ble_ll_stats, rx_data_bytes_crc_err, len);
         } else {
+#ifdef MODULE_LLSTATS_JELLING
+            llstats_inc_crc_err();
+#endif
             STATS_INC(ble_ll_stats, rx_adv_pdu_crc_err);
             STATS_INCN(ble_ll_stats, rx_adv_bytes_crc_err, len);
         }
@@ -1081,6 +1088,9 @@ ble_ll_rx_end(uint8_t *rxbuf, struct ble_mbuf_hdr *rxhdr)
 
         /* If this is a malformed packet, just kill it here */
         if (badpkt) {
+#ifdef MODULE_LLSTATS_JELLING
+            llstats_inc_malformed();
+#endif
             STATS_INC(ble_ll_stats, rx_adv_malformed_pkts);
         }
     }
