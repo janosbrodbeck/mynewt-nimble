@@ -42,6 +42,10 @@
 #include "controller/ble_ll_rfmgmt.h"
 #include "ble_ll_conn_priv.h"
 
+#ifdef MODULE_LLSTATS
+#include "llstats.h"
+#endif
+
 /* XXX: TODO
  * 1) Need to look at advertising and scan request PDUs. Do I allocate these
  * once? Do I use a different pool for smaller ones? Do I statically declare
@@ -4576,6 +4580,9 @@ static void
 ble_ll_adv_drop_event(struct ble_ll_adv_sm *advsm)
 {
     STATS_INC(ble_ll_stats, adv_drop_event);
+#ifdef MODULE_LLSTATS
+    llstats_inc_chan_adv_event_dropped(advsm->adv_chan);
+#endif
 
     ble_ll_sched_rmv_elem(&advsm->adv_sch);
 #if MYNEWT_VAL(BLE_LL_CFG_FEAT_LL_EXT_ADV)

@@ -1675,7 +1675,7 @@ ble_ll_scan_update_aux_data(struct ble_mbuf_hdr *ble_hdr, uint8_t *rxbuf,
             if (get_le16(eh) != aux_data->adi) {
                 aux_data->flags_isr |= BLE_LL_AUX_FLAG_SCAN_ERROR;
 #ifdef MODULE_LLSTATS_JELLING
-                llstats_inc_aux_chain_err();
+                llstats_inc_aux_chain_err(ble_hdr->rxinfo.channel);
 #endif
                 STATS_INC(ble_ll_stats, aux_chain_err);
             }
@@ -3147,7 +3147,7 @@ ble_ll_scan_rx_pkt_in_on_aux(uint8_t pdu_type, struct os_mbuf *om,
 
 #ifdef MODULE_LLSTATS_JELLING
             /* cannot schedule aux packet */
-            llstats_inc_aux_not_schedulable();
+            llstats_inc_aux_not_schedulable(hdr->rxinfo.channel);
 #endif
             /* Silently ignore if no HCI event was sent to host */
             if (!(aux_data->flags_ll & BLE_LL_AUX_FLAG_HCI_SENT_ANY)) {
