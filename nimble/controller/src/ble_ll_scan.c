@@ -3091,6 +3091,9 @@ ble_ll_scan_rx_pkt_in_on_aux(uint8_t pdu_type, struct os_mbuf *om,
         (aux_data->flags_ll & BLE_LL_AUX_FLAG_SCAN_ERROR) ||
         (pdu_type != BLE_ADV_PDU_TYPE_ADV_EXT_IND) ||
         !scansm->scan_enabled) {
+#ifdef MODULE_LLSTATS_JELLING
+        llstats_inc_chan_rx_err(rxinfo->channel);
+#endif
         if (aux_data) {
             ble_ll_scan_end_adv_evt(aux_data);
             ble_ll_scan_aux_data_unref(aux_data);

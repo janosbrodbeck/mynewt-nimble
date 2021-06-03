@@ -42,7 +42,7 @@
 #include "controller/ble_ll_rfmgmt.h"
 #include "ble_ll_conn_priv.h"
 
-#ifdef MODULE_LLSTATS
+#ifdef MODULE_LLSTATS_JELLING
 #include "llstats.h"
 #endif
 
@@ -4580,7 +4580,7 @@ static void
 ble_ll_adv_drop_event(struct ble_ll_adv_sm *advsm)
 {
     STATS_INC(ble_ll_stats, adv_drop_event);
-#ifdef MODULE_LLSTATS
+#ifdef MODULE_LLSTATS_JELLING
     llstats_inc_chan_adv_event_dropped(advsm->adv_chan);
 #endif
 

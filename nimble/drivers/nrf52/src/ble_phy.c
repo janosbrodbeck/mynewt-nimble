@@ -1017,7 +1017,7 @@ ble_phy_rx_end_isr(void)
     dptr = (uint8_t *)&g_ble_phy_rx_buf[0];
     dptr += 3;
 
-#ifdef MODULE_LLSTATS
+#ifdef MODULE_LLSTATS_JELLING
     llstats_inc_chan_rx(ble_hdr->rxinfo.channel);
 #endif
 
@@ -1025,7 +1025,7 @@ ble_phy_rx_end_isr(void)
     crcok = NRF_RADIO->EVENTS_CRCOK;
     if (!crcok) {
         STATS_INC(ble_phy_stats, rx_crc_err);
-#ifdef MODULE_LLSTATS
+#ifdef MODULE_LLSTATS_JELLING
     llstats_inc_chan_crc_phy_err(ble_hdr->rxinfo.channel);
 #endif
     } else {
