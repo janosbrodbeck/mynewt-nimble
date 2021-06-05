@@ -25,6 +25,10 @@
 #include "ble_l2cap_coc_priv.h"
 #include "ble_l2cap_sig_priv.h"
 
+#ifdef MODULE_EXPSTATS
+#include "expstats.h"
+#endif
+
 #if MYNEWT_VAL(BLE_L2CAP_COC_MAX_NUM) != 0 && NIMBLE_BLE_CONNECT
 
 #define BLE_L2CAP_SDU_SIZE              2
@@ -39,6 +43,15 @@ static os_membuf_t ble_l2cap_coc_srv_mem[
 ];
 
 static struct os_mempool ble_l2cap_coc_srv_pool;
+
+
+#ifdef MODULE_EXPSTATS
+static void _logcredit(unsigned stat, struct ble_l2cap_chan *chan, uint16_t change)
+{
+    expstats_log_credit(stat, (void *)chan, chan->conn_handle,
+                        chan->coc_rx.credits, chan->coc_tx.credits, change);
+}
+#endif
 
 static void
 ble_l2cap_coc_dbg_assert_srv_not_inserted(struct ble_l2cap_coc_srv *srv)
@@ -266,6 +279,9 @@ ble_l2cap_coc_rx_fn(struct ble_l2cap_chan *chan)
          */
         rx->credits = 1;
         ble_l2cap_sig_le_credits(chan->conn_handle, chan->scid, rx->credits);
+#ifdef MODULE_EXPSTATS
+        _logcredit(EXPSTATS_NIM_HOST_CREDIT_SIG, chan, 1);
+#endif
     }
 
     BLE_HS_LOG(DEBUG, "Received partial sdu_len=%d, credits left=%d\n",
@@ -283,6 +299,9 @@ ble_l2cap_coc_set_new_mtu_mps(struct ble_l2cap_chan *chan, uint16_t mtu, uint16_
     if (mtu % chan->my_coc_mps) {
         chan->initial_credits++;
     }
+// #ifdef MODULE_EXPSTATS
+//     _logcredit(EXPSTATS_NIM_HOST_CREDIT_INIT, chan, chan->initial_credits);
+// #endif
 }
 
 struct ble_l2cap_chan *
@@ -315,6 +334,11 @@ ble_l2cap_coc_chan_alloc(struct ble_hs_conn *conn, uint16_t psm, uint16_t mtu,
     }
 
     chan->initial_credits = chan->coc_rx.credits;
+
+// #ifdef MODULE_EXPSTATS
+//     _logcredit(EXPSTATS_NIM_HOST_CREDIT_INIT, chan, chan->initial_credits);
+// #endif
+
     return chan;
 }
 
@@ -548,6 +572,10 @@ ble_l2cap_coc_le_credits_update(uint16_t conn_handle, uint16_t dcid,
 
     chan->coc_tx.credits += credits;
 
+// #ifdef MODULE_EXPSTATS
+//     _logcredit(EXPSTATS_NIM_HOST_CREDIT_UPD, chan, credits);
+// #endif
+
     /* leave the host locked on purpose when ble_l2cap_coc_continue_tx() */
     ble_l2cap_coc_continue_tx(chan);
 }
@@ -576,12 +604,22 @@ ble_l2cap_coc_recv_ready(struct ble_l2cap_chan *chan, struct os_mbuf *sdu_rx)
      * to be able to send complete SDU.
      */
     if (chan->coc_rx.credits < c->initial_credits) {
+// #ifdef MODULE_EXPSTATS
+//         int change = c->initial_credits - chan->coc_rx.credits;
+// #endif
         ble_hs_unlock();
         ble_l2cap_sig_le_credits(chan->conn_handle, chan->scid,
                                  c->initial_credits - chan->coc_rx.credits);
         ble_hs_lock();
         chan->coc_rx.credits = c->initial_credits;
+// #ifdef MODULE_EXPSTATS
+//         _logcredit(EXPSTATS_NIM_HOST_CREDIT_SIG, chan, change);
+// #endif
     }
+
+// #ifdef MODULE_EXPSTATS
+//     _logcredit(EXPSTATS_NIM_HOST_CREDIT_RX_RDY, chan, 0);
+// #endif
 
     ble_hs_unlock();
 
@@ -597,6 +635,9 @@ ble_l2cap_coc_send(struct ble_l2cap_chan *chan, struct os_mbuf *sdu_tx)
 {
     struct ble_l2cap_coc_endpoint *tx;
 
+// #ifdef MODULE_EXPSTATS
+//     _logcredit(EXPSTATS_NIM_HOST_CREDIT_TX, chan, 0);
+// #endif
 
     tx = &chan->coc_tx;
 

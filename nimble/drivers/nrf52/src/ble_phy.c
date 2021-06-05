@@ -42,6 +42,10 @@
 #include "llstats.h"
 #endif
 
+#ifdef MODULE_LLSTATS
+#include "llstats.h"
+#endif
+
 #if MYNEWT_VAL(BLE_LL_CFG_FEAT_LE_CODED_PHY)
 #if !MYNEWT_VAL_CHOICE(MCU_TARGET, nRF52840) && !MYNEWT_VAL_CHOICE(MCU_TARGET, nRF52811)
 #error LE Coded PHY can only be enabled on nRF52811 or nRF52840
@@ -890,6 +894,11 @@ ble_phy_tx_end_isr(void)
     uint8_t transition;
     uint32_t rx_time;
     uint32_t wfr_time;
+
+    // dbgpin_sig(0);
+// #ifdef MODULE_LLSTATS
+//     llstats_tx();
+// #endif
 
     /* Store PHY on which we've just transmitted smth */
     tx_phy_mode = g_ble_phy_data.phy_cur_phy_mode;

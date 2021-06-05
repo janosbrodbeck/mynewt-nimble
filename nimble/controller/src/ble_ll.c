@@ -45,6 +45,10 @@
 #include "controller/ble_ll_sync.h"
 #include "ble_ll_conn_priv.h"
 
+#ifdef MODULE_LLSTATS
+#include "llstats.h"
+#endif
+
 #if MYNEWT_VAL(BLE_LL_DTM)
 #include "ble_ll_dtm_priv.h"
 #endif
@@ -1021,6 +1025,8 @@ ble_ll_rx_end(uint8_t *rxbuf, struct ble_mbuf_hdr *rxhdr)
     uint8_t len;
     uint8_t crcok;
     struct os_mbuf *rxpdu;
+
+    // dbgpin_sig(1);
 
     /* Get CRC status from BLE header */
     crcok = BLE_MBUF_HDR_CRC_OK(rxhdr);

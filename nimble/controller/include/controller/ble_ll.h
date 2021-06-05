@@ -39,23 +39,8 @@ extern "C" {
 #error 32.768kHz clock required
 #endif
 
-#if defined(MYNEWT) && MYNEWT_VAL(BLE_LL_VND_EVENT_ON_ASSERT)
-#ifdef NDEBUG
-#define BLE_LL_ASSERT(cond) (void(0))
-#else
-#define BLE_LL_ASSERT(cond) \
-    if (!(cond)) { \
-        if (hal_debugger_connected()) { \
-            assert(0);\
-        } else {\
-            ble_ll_hci_ev_send_vendor_err(__FILE__, __LINE__); \
-            while(1) {}\
-        }\
-    }
-#endif
-#else
-#define BLE_LL_ASSERT(cond) assert(cond)
-#endif
+#include "assert.h"
+#define BLE_LL_ASSERT(cond)     assert(cond)
 
 #if MYNEWT_VAL(BLE_LL_CFG_FEAT_LE_2M_PHY) || MYNEWT_VAL(BLE_LL_CFG_FEAT_LE_CODED_PHY)
 #define BLE_LL_BT5_PHY_SUPPORTED    (1)

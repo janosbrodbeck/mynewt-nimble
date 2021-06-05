@@ -44,6 +44,10 @@
 #include "controller/ble_ll_utils.h"
 #include "ble_ll_conn_priv.h"
 
+#ifdef MODULE_LLSTATS
+#include "llstats.h"
+#endif
+
 #if (BLETEST_THROUGHPUT_TEST == 1)
 extern void bletest_completed_pkt(uint16_t handle);
 #endif
@@ -1294,6 +1298,12 @@ conn_tx_pdu:
 #endif
 
     /* Set transmit end callback */
+#ifdef MODULE_LLSTATS
+    if (connsm->conn_role == BLE_LL_CONN_ROLE_MASTER) {
+        llstats_inc_tx(connsm->conn_handle, connsm->data_chan_index);
+    }
+#endif
+
     ble_phy_set_txend_cb(txend_func, connsm);
     rc = ble_phy_tx(ble_ll_tx_mbuf_pducb, m, end_transition);
     if (!rc) {
@@ -2596,6 +2606,7 @@ ble_ll_conn_event_end(struct ble_npl_event *ev)
         return;
     }
 
+
     /* Reset "per connection event" variables */
     connsm->cons_rxd_bad_crc = 0;
     connsm->csmflags.cfbit.pkt_rxd = 0;
@@ -2609,12 +2620,22 @@ ble_ll_conn_event_end(struct ble_npl_event *ev)
     /* XXX: I think all this fine for when we do connection updates, but
        we may want to force the first event to be scheduled. Not sure */
     /* Schedule the next connection event */
+#ifdef MODULE_LLSTATS
+    unsigned resched = 0;
+#endif
     while (ble_ll_sched_conn_reschedule(connsm)) {
+#ifdef MODULE_LLSTATS
+        ++resched;
+#endif
         if (ble_ll_conn_next_event(connsm)) {
             ble_ll_conn_end(connsm, BLE_ERR_CONN_TERM_LOCAL);
             return;
         }
     }
+
+// #ifdef MODULE_LLSTATS
+    // llstats_dump_conn_tim(connsm, resched);
+// #endif
 
     /*
      * This is definitely not perfect but hopefully will be fine in regards to
@@ -3786,6 +3807,11 @@ ble_ll_conn_rx_isr_end(uint8_t *rxbuf, struct ble_mbuf_hdr *rxhdr)
     int rx_phy_mode;
     bool alloc_rxpdu = true;
 
+    // dbgpin_burst(1, 2);
+// #ifdef MODULE_LLSTATS
+//     llstats_rx();
+// #endif
+
     rc = -1;
     connsm = g_ble_ll_conn_cur_sm;
 
@@ -3902,6 +3928,15 @@ ble_ll_conn_rx_isr_end(uint8_t *rxbuf, struct ble_mbuf_hdr *rxhdr)
          * If SN bit from header does not match NESN in connection, this is
          * a resent PDU and should be ignored.
          */
+
+        // HERE: we check if received packet is a DUP
+        // -> RX all
+        // -> RX_ok++
+        // use connsm->conn_handle (uint16) to identify connection
+        // use connsm->data_chan_index (uint8_t) to get used data channel
+        // context:
+        // conn_handle:
+
         hdr_sn = hdr_byte & BLE_LL_DATA_HDR_SN_MASK;
         conn_nesn = connsm->next_exp_seqnum;
         if (rxpdu && ((hdr_sn && conn_nesn) || (!hdr_sn && !conn_nesn))) {
@@ -3920,6 +3955,10 @@ ble_ll_conn_rx_isr_end(uint8_t *rxbuf, struct ble_mbuf_hdr *rxhdr)
          * Check NESN bit from header. If same as tx seq num, the transmission
          * is acknowledged. Otherwise we need to resend this PDU.
          */
+
+        // HERE: we make verify if our last sent packet was delivered ok
+        // -> TX_ok++
+
         if (CONN_F_EMPTY_PDU_TXD(connsm) || connsm->cur_tx_pdu) {
             hdr_nesn = hdr_byte & BLE_LL_DATA_HDR_NESN_MASK;
             conn_sn = connsm->tx_seqnum;
@@ -3928,6 +3967,13 @@ ble_ll_conn_rx_isr_end(uint8_t *rxbuf, struct ble_mbuf_hdr *rxhdr)
                 STATS_INC(ble_ll_conn_stats, data_pdu_txf);
             } else {
                 /* Transmit success */
+
+#ifdef MODULE_LLSTATS
+                if (connsm->conn_role == BLE_LL_CONN_ROLE_MASTER) {
+                    llstats_inc_tx_comp(connsm->conn_handle, connsm->data_chan_index);
+                }
+#endif
+
                 connsm->tx_seqnum ^= 1;
                 STATS_INC(ble_ll_conn_stats, data_pdu_txg);
 
