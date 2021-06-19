@@ -1027,7 +1027,7 @@ ble_phy_rx_end_isr(void)
     dptr += 3;
 
 #ifdef MODULE_LLSTATS_JELLING
-    llstats_inc_chan_rx(ble_hdr->rxinfo.channel);
+    llstats_inc_chan_rx(ble_hdr->rxinfo.channel, ble_hdr->rxinfo.rssi);
 #endif
 
     /* Count PHY crc errors and valid packets */
