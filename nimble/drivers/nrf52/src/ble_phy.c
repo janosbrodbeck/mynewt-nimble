@@ -1027,7 +1027,7 @@ ble_phy_rx_end_isr(void)
     dptr += 3;
 
 #ifdef MODULE_LLSTATS_JELLING
-    llstats_inc_chan_rx(ble_hdr->rxinfo.channel, ble_hdr->rxinfo.rssi);
+    llstats_inc_chan_rx(ble_hdr->rxinfo.channel);
 #endif
 
     /* Count PHY crc errors and valid packets */
@@ -1035,9 +1035,12 @@ ble_phy_rx_end_isr(void)
     if (!crcok) {
         STATS_INC(ble_phy_stats, rx_crc_err);
 #ifdef MODULE_LLSTATS_JELLING
-    llstats_inc_chan_crc_phy_err(ble_hdr->rxinfo.channel);
+    llstats_inc_chan_crc_phy_err(ble_hdr->rxinfo.channel, ble_hdr->rxinfo.rssi);
 #endif
     } else {
+#ifdef MODULE_LLSTATS_JELLING
+    llstats_inc_chan_rssi(ble_hdr->rxinfo.channel, ble_hdr->rxinfo.rssi);
+#endif
         STATS_INC(ble_phy_stats, rx_valid);
         ble_hdr->rxinfo.flags |= BLE_MBUF_HDR_F_CRC_OK;
 #if MYNEWT_VAL(BLE_LL_CFG_FEAT_LE_ENCRYPTION)
